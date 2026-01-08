@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About Me — Ed</title>
+
+  <meta name="description" content="About Ed — thoughtful, practical, human-centered work." />
+
+  <!-- Basic SEO / Social -->
+  <meta property="og:title" content="About Me — Ed" />
+  <meta property="og:description" content="Thoughtful, practical, human-centered work." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/images/headshot1.png" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <!-- Minimal base styles if CSS fails -->
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1f1f1f;
+      background: #f6f6f6;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="about-wrapper">
+
+    <!-- Hero -->
+    <section class="about-hero">
+      <div class="hero-image">
+        <img
+          src="assets/images/headshot-web.jpg"
+          alt="Portrait of Ed"
+          loading="eager"
+        />
+      </div>
+
+      <div class="hero-text">
+        <h1>Hi, I’m Ed.</h1>
+        <p class="hero-subtitle">
+          Thoughtful, practical, and human-centered.
+        </p>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <section class="about-content">
+      <p>
+        I work at the intersection of creativity, problem-solving, and
+        practicality — helping ideas become things that actually work in
+        the real world.
+      </p>
+
+      <p>
+        My background spans operations, design, and technical systems.
+        That usually means I’m translating between people who think very
+        differently and helping them land on solutions that make sense
+        for everyone involved.
+      </p>
+
+      <p>
+        I care about clarity, good process, and building things that feel
+        intentional rather than rushed or performative. Whether I’m
+        collaborating with a team, supporting a project, or building
+        something of my own, the goal is always the same: do the work
+        well, communicate clearly, and leave things better than I found
+        them.
+      </p>
+
+      <p>
+        Outside of work, I’m inspired by creativity, animals, and the
+        quiet satisfaction of making something useful and meaningful.
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="about-footer">
+      <p>
+        © <span id="year"></span> Ed
+      </p>
+    </footer>
+
+  </main>
+
+  <script>
+    // Keep the footer year current without thinking about it again
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

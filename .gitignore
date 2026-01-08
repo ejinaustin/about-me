@@ -1,0 +1,9 @@
+# Local backups
+*.zip
+*.7z
+*.rar
+*_BACKUP_*
+
+# OS junk
+.DS_Store
+Thumbs.db
