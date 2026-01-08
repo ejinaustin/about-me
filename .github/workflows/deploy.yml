@@ -43,6 +43,17 @@ jobs:
               exit 1
               ;;
           esac
+      - name: SSH diagnostic (shows why auth fails)
+        run: |
+          set -euxo pipefail
+          USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
+          HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
+
+          # -vvv shows which keys are offered / accepted
+          ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${USER_CLEAN}@${HOST_CLEAN}" "echo SSH_OK"
+
+
 
       - name: Deploy via rsync
         run: |
