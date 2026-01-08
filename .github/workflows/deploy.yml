@@ -18,55 +18,50 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rsync openssh-client
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+      - name: Load SSH key into agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          key: ${{ secrets.DREAMHOST_SSH_KEY }}
-          known_hosts: unnecessary
+          ssh-private-key: ${{ secrets.DREAMHOST_SSH_KEY }}
 
       - name: Add DreamHost to known_hosts
         run: |
           set -euxo pipefail
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.DREAMHOST_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Safety check (refuse to deploy outside /about-me)
         run: |
           set -euxo pipefail
-          case "${{ secrets.DREAMHOST_PATH }}" in
+          PATH_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_PATH }}" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+          case "$PATH_CLEAN" in
             */about-me|*/about-me/)
               echo "✔ Deploy path verified: about-me"
               ;;
             *)
               echo "✖ REFUSING DEPLOY — DREAMHOST_PATH must end with /about-me"
-              echo "  Current DREAMHOST_PATH: ${{ secrets.DREAMHOST_PATH }}"
               exit 1
               ;;
           esac
-      - name: SSH diagnostic (shows why auth fails)
+
+      - name: SSH diagnostic (confirm key is offered)
         run: |
           set -euxo pipefail
           USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
           HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
-
-          # -vvv shows which keys are offered / accepted
-          ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=yes \
+          ssh -vv -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "${USER_CLEAN}@${HOST_CLEAN}" "echo SSH_OK"
-
-
 
       - name: Deploy via rsync
         run: |
           set -euxo pipefail
-
           USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
           HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
           PATH_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_PATH }}" | tr -d '\r' | sed 's/[[:space:]]*$//')"
 
           DEST="${USER_CLEAN}@${HOST_CLEAN}:${PATH_CLEAN}"
 
-          echo "Deploying to sanitized destination"
           rsync -avz --delete \
+            -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes" \
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude ".gitignore" \
