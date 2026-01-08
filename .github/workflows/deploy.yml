@@ -1,0 +1,74 @@
+name: Deploy About Me to DreamHost
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install deploy dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Load SSH key into agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DREAMHOST_SSH_KEY }}
+
+      - name: Add DreamHost to known_hosts
+        run: |
+          set -euxo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.DREAMHOST_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Safety check (refuse to deploy outside /about-me)
+        run: |
+          set -euxo pipefail
+          PATH_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_PATH }}" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+          case "$PATH_CLEAN" in
+            */about-me|*/about-me/)
+              echo "✔ Deploy path verified: about-me"
+              ;;
+            *)
+              echo "✖ REFUSING DEPLOY — DREAMHOST_PATH must end with /about-me"
+              exit 1
+              ;;
+          esac
+
+      - name: SSH diagnostic (confirm key is offered)
+        run: |
+          set -euxo pipefail
+          USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
+          HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
+          ssh -vv -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${USER_CLEAN}@${HOST_CLEAN}" "echo SSH_OK"
+
+      - name: Deploy via rsync
+        run: |
+          set -euxo pipefail
+          USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
+          HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
+          PATH_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_PATH }}" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+
+          DEST="${USER_CLEAN}@${HOST_CLEAN}:${PATH_CLEAN}"
+
+          rsync -avz --delete \
+            -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude ".gitignore" \
+            --exclude ".gitattributes" \
+            --exclude "README.md" \
+            --exclude "**/*.psd" \
+            --exclude "**/*.ai" \
+            --exclude "**/*.zip" \
+            --exclude "**/*.mp4" \
+            ./ "$DEST"
