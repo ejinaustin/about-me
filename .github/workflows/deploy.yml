@@ -44,11 +44,17 @@ jobs:
               ;;
           esac
 
-      - name: Deploy via rsync
+           - name: Deploy via rsync
         run: |
           set -euxo pipefail
-          DEST="${{ secrets.DREAMHOST_USER }}@${{ secrets.DREAMHOST_HOST }}:${{ secrets.DREAMHOST_PATH }}"
 
+          USER_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_USER }}" | tr -d '\r\n[:space:]')"
+          HOST_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_HOST }}" | tr -d '\r\n[:space:]')"
+          PATH_CLEAN="$(printf '%s' "${{ secrets.DREAMHOST_PATH }}" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+
+          DEST="${USER_CLEAN}@${HOST_CLEAN}:${PATH_CLEAN}"
+
+          echo "Deploying to sanitized destination"
           rsync -avz --delete \
             --exclude ".git/" \
             --exclude ".github/" \
