@@ -1,4 +1,4 @@
-name: Deploy to DreamHost
+name: Deploy About Me to DreamHost
 
 on:
   push:
@@ -30,15 +30,16 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Safety check (refuse to deploy outside /sourdough)
+      - name: Safety check (refuse to deploy outside /about-me)
         run: |
           set -euxo pipefail
           case "${{ secrets.DREAMHOST_PATH }}" in
-            */sourdough|*/sourdough/)
-              echo "✔ Deploy path verified: sourdough"
+            */about-me|*/about-me/)
+              echo "✔ Deploy path verified: about-me"
               ;;
             *)
-              echo "✖ REFUSING DEPLOY — DREAMHOST_PATH must end with /sourdough"
+              echo "✖ REFUSING DEPLOY — DREAMHOST_PATH must end with /about-me"
+              echo "  Current DREAMHOST_PATH: ${{ secrets.DREAMHOST_PATH }}"
               exit 1
               ;;
           esac
@@ -47,7 +48,15 @@ jobs:
         run: |
           set -euxo pipefail
           DEST="${{ secrets.DREAMHOST_USER }}@${{ secrets.DREAMHOST_HOST }}:${{ secrets.DREAMHOST_PATH }}"
+
           rsync -avz --delete \
             --exclude ".git/" \
             --exclude ".github/" \
+            --exclude ".gitignore" \
+            --exclude ".gitattributes" \
+            --exclude "README.md" \
+            --exclude "**/*.psd" \
+            --exclude "**/*.ai" \
+            --exclude "**/*.zip" \
+            --exclude "**/*.mp4" \
             ./ "$DEST"
