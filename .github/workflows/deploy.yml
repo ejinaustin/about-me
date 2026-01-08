@@ -1,0 +1,53 @@
+name: Deploy to DreamHost
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install deploy dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DREAMHOST_SSH_KEY }}
+          known_hosts: unnecessary
+
+      - name: Add DreamHost to known_hosts
+        run: |
+          set -euxo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Safety check (refuse to deploy outside /sourdough)
+        run: |
+          set -euxo pipefail
+          case "${{ secrets.DREAMHOST_PATH }}" in
+            */sourdough|*/sourdough/)
+              echo "✔ Deploy path verified: sourdough"
+              ;;
+            *)
+              echo "✖ REFUSING DEPLOY — DREAMHOST_PATH must end with /sourdough"
+              exit 1
+              ;;
+          esac
+
+      - name: Deploy via rsync
+        run: |
+          set -euxo pipefail
+          DEST="${{ secrets.DREAMHOST_USER }}@${{ secrets.DREAMHOST_HOST }}:${{ secrets.DREAMHOST_PATH }}"
+          rsync -avz --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            ./ "$DEST"
